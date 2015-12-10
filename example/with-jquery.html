@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script type="text/javascript" src="../exif.js"></script>
+
+</head>
+<body>
+<div class="input-field">
+  <label>Choose image or take a picture :</label>
+  <input type="file" id="image" name="image" accept="image/*"/>
+  <p>Created Date: <span id="created_date"></span></p>
+</div>
+
+<script>
+
+$(function() {
+
+  function base64ToArrayBuffer (base64) {
+    base64 = base64.replace(/^data\:([^\;]+)\;base64,/gmi, '');
+    var binary_string = window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array( len );
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  // Handler for .ready() called.
+  $(document).delegate($("#image"), "change", function(ev){ 
+    file = ev.target.files[0];
+    date = file.lastModifiedDate + "";
+    var reader = new FileReader();
+
+    reader.onload = function (eve) {
+      var exif = EXIF.readFromBinaryFile( base64ToArrayBuffer( eve.target.result ) );
+      
+      alert(JSON.stringify(exif, null, 4));
+
+      //Get date
+      try{
+        if (exif && (exif.DateTimeOriginal || exif.DateTime)){
+          date = exif.DateTimeOriginal || exif.DateTime;
+
+          //convert Date format in Javascript
+          tmp = date.split(" ");
+          tmp[0] = tmp[0].split(":").join("-");
+          date = new Date(tmp[0] + "T" + tmp[1]);
+
+          $("#created_date").html(date);
+        }
+      }catch(e){}
+    }
+
+    reader.readAsDataURL(file);
+  });
+
+});
+</script>
+</body>
+</html>
